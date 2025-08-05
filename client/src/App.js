@@ -6,6 +6,7 @@ import TodoForm from './components/TodoForm';
 import TodoList from './components/TodoList';
 
 function App() {
+  const API = process.env.REACT_APP_BACKEND_URL;
   const [todo, setTodo] = useState('');
   const [todoList, setTodoList] = useState([]);
   const [newTodo, setNewTodo] = useState('');
@@ -25,7 +26,7 @@ function App() {
     handleCharactersError(todo);
 
     try {
-      await axios.post('http://localhost:8080/create', {
+      await axios.post(API+'create', {
         todo,
       }, {
         withCredentials: true
@@ -38,7 +39,7 @@ function App() {
   const getAllTodos = async () => {
     try {
       await axios
-        .get('http://localhost:8080/')
+        .get(API)
         .then((response) => {
           setTodoList(response.data);
         });
@@ -52,7 +53,7 @@ function App() {
 
     try {
       await axios
-        .put(`http://localhost:8080/update/${id}`, {
+        .put(API+`${id}`, {
           id,
           todo: newTodo,
         })
@@ -73,7 +74,7 @@ function App() {
   const deleteTodo = async (id) => {
     try {
       await axios
-        .delete(`http://localhost:8080/${id}`)
+        .delete(API+`${id}`)
         .then((response) => {
           setTodoList(todoList.filter((val) => val.id !== id));
         });
@@ -106,6 +107,8 @@ function App() {
           deleteTodo={deleteTodo}
         />
       </Layout>
+
+      {console.log(process.env.REACT_APP_BACKEND_URL)}
     </div>
   );
 }

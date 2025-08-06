@@ -134,8 +134,8 @@ resource "aws_security_group" "ecs-sg" {
   vpc_id = aws_vpc.my-vpc-todo.id
 
   ingress {
-    from_port       = 3000
-    to_port         = 3000
+    from_port       = 8080
+    to_port         = 8080
     protocol        = "tcp"
     security_groups = [aws_security_group.alb-sg.id]
   }
@@ -210,7 +210,7 @@ resource "aws_lb_target_group" "frontend-tg" {
 
 resource "aws_lb_target_group" "backend-tg" {
   name     = "backend-tg"
-  port     = 3000
+  port     = 8080
   target_type = "ip"
   protocol = "HTTP"
   vpc_id   = aws_vpc.my-vpc-todo.id
@@ -259,7 +259,7 @@ resource "aws_ecr_repository" "ecr-repo-backend" {
   name = "ecr-repo-backend"
 }
 
-/*#ecs
+#ecs
 resource "aws_ecs_cluster" "todo-cluster" {
   name = "todo-cluster"
 }
@@ -269,11 +269,11 @@ resource "aws_iam_role" "ecs_task_execution_role" {
     name = "ecs-task-excution-role"
 
     assume_role_policy = jsonencode({
-        version = "2012-10-17",
-        statement =[{
-            effect = "Allow",
-            principal ={
-                service = "ecs-tasks.amazonaws.com"
+        Version = "2012-10-17",
+        Statement =[{
+            Effect = "Allow",
+            Principal ={
+                Service = "ecs-tasks.amazonaws.com"
             },
             Action = "sts:AssumeRole"
         }]
@@ -297,7 +297,7 @@ resource "aws_ecs_task_definition" "frontend_task" {
     container_definitions = jsonencode([
           {
       name      = "frontend"
-      image     = "your-dockerhub-username/frontend-image"
+      image     = "${aws_ecr_repository.ecr-repo-frontend.repository_url}"
       portMappings = [{
         containerPort = 80
         hostPort      = 80
@@ -319,12 +319,34 @@ resource "aws_ecs_task_definition" "backend_task" {
   container_definitions = jsonencode([
     {
       name      = "backend"
-      image     = "your-dockerhub-username/backend-image"
+      image     = "${aws_ecr_repository.ecr-repo-backend.repository_url}"
       portMappings = [{
-        containerPort = 3000
-        hostPort      = 3000
+        containerPort = 8080
+        hostPort      = 8080
         protocol      = "tcp"
       }]
+      environment = [
+        {
+          name  = "DB_NAME"
+          value = "todo"
+        },
+        {
+          name  = "DB_USER"
+          value = aws_db_instance.todo_db.username
+        },
+        {
+          name  = "DB_PASS"
+          value = aws_db_instance.todo_db.password
+        },
+        {
+          name  = "DB_HOST"
+          value = aws_db_instance.todo_db.address
+        },
+        {
+          name = "FRONTEND_URL"
+          value = "http://${aws_lb.todo-lb.dns_name}"
+        }
+      ]
     }
   ])
 }
@@ -338,42 +360,42 @@ resource "aws_ecs_service" "frontend_service" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets         = [aws_subnet.private_ecs.id]
+    subnets         = [aws_subnet.todo-private-ecs.id]
     assign_public_ip = false
-    security_groups = [aws_security_group.ecs_sg.id]
+    security_groups = [aws_security_group.ecs-sg.id]
   }
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.frontend_tg.arn
+    target_group_arn = aws_lb_target_group.frontend-tg.arn
     container_name   = "frontend"
     container_port   = 80
   }
 
-  depends_on = [aws_lb_listener.listener]
+  depends_on = [aws_lb_listener.frontend]
 }
   
 
  #ECS serivce for backend 
 resource "aws_ecs_service" "backend_service" {
   name            = "backend-service"
-  cluster         = aws_ecs_cluster.todo_cluster.id
+  cluster         = aws_ecs_cluster.todo-cluster.id
   task_definition = aws_ecs_task_definition.backend_task.arn
   desired_count   = 1
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets         = [aws_subnet.private_ecs.id]
+    subnets         = [aws_subnet.todo-private-ecs.id]
     assign_public_ip = false
-    security_groups = [aws_security_group.ecs_sg.id]
+    security_groups = [aws_security_group.ecs-sg.id]
   }
 load_balancer {
-    target_group_arn = aws_lb_target_group.backend_tg.arn
+    target_group_arn = aws_lb_target_group.backend-tg.arn
     container_name   = "backend"
-    container_port   = 3000
+    container_port   = 8080
   }
 
-  depends_on = [aws_lb_listener.listener]
-}*/
+  depends_on = [aws_lb_listener.frontend]
+}
 
 #rds mysql
 resource "aws_db_subnet_group" "rds_subnet_group" {
@@ -395,8 +417,6 @@ resource "aws_db_instance" "todo_db" {
   storage_encrypted   = true
   skip_final_snapshot = true
 
-
   db_subnet_group_name   = aws_db_subnet_group.rds_subnet_group.name
   vpc_security_group_ids = [aws_security_group.rds_sg.id]
-
 }

@@ -5,8 +5,14 @@ const { TodoRecord } = require('../records/todo.record');
 const TodoRouter = Router();
 
 TodoRouter.get('/', async (req, res) => {
-  const todosList = await TodoRecord.listAll();
+  try{
+    const todosList = await TodoRecord.listAll();
   res.send(todosList);
+  }
+  catch(err){
+    res.status(400).send("error hey" + err.message);
+  }
+  
 });
 
 TodoRouter.get("/health",(req,res)=>{

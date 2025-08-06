@@ -37,14 +37,16 @@ function App() {
   };
 
   const getAllTodos = async () => {
+  
     try {
       await axios
         .get(API)
         .then((response) => {
           setTodoList(response.data);
+
         });
     } catch (err) {
-      console.error(err.message);
+      console.error("errro hey "+err.message);
     }
   };
 

@@ -53,7 +53,7 @@ function App() {
 
     try {
       await axios
-        .put(API+`${id}`, {
+        .put(API+`update/${id}`, {
           id,
           todo: newTodo,
         })

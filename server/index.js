@@ -13,7 +13,7 @@ app.use(cors({
 app.use(express.json());
 
 // Routes
-app.use('/', TodoRouter);
+app.use('/api', TodoRouter);
 
 // Start the server
 app.listen(8080,"0.0.0.0", () => {

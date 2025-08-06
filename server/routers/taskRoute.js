@@ -9,6 +9,10 @@ TodoRouter.get('/', async (req, res) => {
   res.send(todosList);
 });
 
+TodoRouter.get("/health",(req,res)=>{
+  res.status(200).send("OK");
+})
+
 TodoRouter.post('/create', async (req, res) => {
   const newTodo = new TodoRecord(req.body);
   await newTodo.insert();

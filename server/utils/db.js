@@ -9,4 +9,21 @@ const pool = mysql.createPool({
   namedPlaceholders: true,
 }).promise();
 
-module.exports = { pool, };
+// Function to create 'todos' table if it doesn't exist
+async function createTodosTableIfNotExists() {
+  try {
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS todos (
+        id VARCHAR(36) PRIMARY KEY,
+        todo VARCHAR(50) NOT NULL
+      )
+    `);
+    console.log("'todos' table checked/created.");
+  } catch (err) {
+    console.error(' Error creating todos table:', err);
+  }
+}
+
+createTodosTableIfNotExists();
+
+module.exports = { pool };

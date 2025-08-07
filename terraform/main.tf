@@ -150,7 +150,8 @@ resource "aws_security_group" "ecs-sg" {
     from_port       = 0
     to_port         = 0
     protocol        = "tcp"
-    security_groups = [aws_security_group.alb-sg.id]
+    cidr_blocks = ["0.0.0.0/0"]
+  #security_groups = [aws_security_group.alb-sg.id]
   }
   egress {
     from_port   = 0
@@ -189,7 +190,7 @@ resource "aws_lb" "todo-lb" {
   subnets            = [aws_subnet.todo-public-1.id, aws_subnet.todo-public-2.id]
 }
 
-
+#target group for frontend
 resource "aws_lb_target_group" "frontend-tg" {
   name     = "frontend-tg"
   target_type = "ip"
@@ -208,6 +209,7 @@ resource "aws_lb_target_group" "frontend-tg" {
   }
 }
 
+#target group for backend
 resource "aws_lb_target_group" "backend-tg" {
   name     = "backend-tg"
   port     = 8080
@@ -225,6 +227,7 @@ resource "aws_lb_target_group" "backend-tg" {
   }
 }
 
+#listener for frontend
 resource "aws_lb_listener" "frontend" {
   load_balancer_arn = aws_lb.todo-lb.arn
   port              = 80
@@ -235,6 +238,8 @@ resource "aws_lb_listener" "frontend" {
     target_group_arn = aws_lb_target_group.frontend-tg.arn
   }
 }
+
+#listener for backend
 resource "aws_lb_listener_rule" "backend" {
   listener_arn = aws_lb_listener.frontend.arn
   action {
